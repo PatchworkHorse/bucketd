@@ -1,0 +1,26 @@
+version: '3.8'
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+    environment:
+      - GIN_MODE=release
+    restart: unless-stopped
+
+  redis: 
+    image: "redis:latest"
+    networks:
+      - app-network
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
