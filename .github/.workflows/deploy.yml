@@ -16,7 +16,7 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v2
           with :
-            path: ./object-api
+            path: ./source
 
         - name: Setup SSH Key
           run: |
