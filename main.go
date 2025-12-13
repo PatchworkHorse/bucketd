@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"go-object-api/objectDns"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,16 +12,29 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// var store = make(map[string]string)
+// Default redis options
+var redisOptions = &redis.Options{
+	Addr:     "redis:6379",
+	Password: "",
+	DB:       0,
+	Protocol: 2,
+}
 
 func main() {
+
 	r := gin.Default()
 
 	r.GET("/hello", getHello)
-	r.GET("/object/:key", getCache)
-	r.POST("/object/:key/:value/:expire", setCache)
+	r.GET("/object/:key", func(c *gin.Context) {
+		getCache(c, redisOptions)
+	})
+	r.POST("/object/:key/:value/:expire", func(c *gin.Context) {
+		setCache(c, redisOptions)
+	})
 
+	go objectDns.StartDnsListener()
 	r.Run()
+
 }
 
 func getHello(ctx *gin.Context) {
@@ -29,18 +43,13 @@ func getHello(ctx *gin.Context) {
 	host, _ := os.Hostname()
 
 	ctx.String(http.StatusOK,
-		"Hello! The current system time is %s, your response was handled by %s\n", time, host)
+		"Hello! The current system time is %s, your request was handled by %s\n", time, host)
 }
 
 // Todo: consolidate Redis options
 
-func getCache(gctx *gin.Context) {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: "",
-		DB:       0,
-		Protocol: 2,
-	})
+func getCache(gctx *gin.Context, redisOptions *redis.Options) {
+	rdb := redis.NewClient(redisOptions)
 
 	ctx := context.Background()
 	key := gctx.Param("key")
@@ -59,17 +68,12 @@ func getCache(gctx *gin.Context) {
 	value, _ := getCmd.Result()
 	ttl, _ := ttlCmd.Result()
 
+	gctx.String(http.StatusAccepted, value+"\n")
 	gctx.Header("X-Expires-In", ttl.String())
-	gctx.String(http.StatusAccepted, value)
 }
 
-func setCache(gctx *gin.Context) {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: "",
-		DB:       0,
-		Protocol: 2,
-	})
+func setCache(gctx *gin.Context, redisOptions *redis.Options) {
+	rdb := redis.NewClient(redisOptions)
 
 	ctx := context.Background()
 
@@ -92,5 +96,5 @@ func setCache(gctx *gin.Context) {
 		return
 	}
 
-	gctx.String(http.StatusOK, "Cache set successfully")
+	gctx.String(http.StatusOK, "Cache set successfully!\n")
 }
