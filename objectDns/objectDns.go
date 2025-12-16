@@ -10,6 +10,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+// Patchwork todo:
+// - Centralize error handling, don't generate EDNS0_EDEs in every handler
+// - Better logging
+// - Read A and AAAA values from environment variables
+
 var redOpts *redis.Options
 
 func StartDnsListener(redisOptions *redis.Options) {
@@ -106,10 +111,24 @@ func handleA(query *dns.Msg, response *dns.Msg) error {
 		return errors.New("handleA expects an A question type")
 	}
 
-	// Question section must be for *.object.patchwork.horse
-	if !dns.IsSubDomain("object.patchwork.horse.", query.Question[0].Name) {
+	// Question section must be for *.object.patchwork.horse or object.patchwork.horse
+	if !dns.IsSubDomain("object.patchwork.horse.", query.Question[0].Name) && query.Question[0].Name != "object.patchwork.horse." {
 		response.SetRcode(query, dns.RcodeNameError)
-		return errors.New("invalid domain; must be a subdomain of object.patchwork.horse")
+
+		// Add extended DNS error information
+		opt := new(dns.OPT)
+		opt.Hdr.Name = "."
+		opt.Hdr.Rrtype = dns.TypeOPT
+		opt.SetUDPSize(4096)
+
+		ede := new(dns.EDNS0_EDE)
+		ede.InfoCode = dns.ExtendedErrorCodeOther
+		ede.ExtraText = "Domain must be object.patchwork.horse or a subdomain"
+		opt.Option = append(opt.Option, ede)
+
+		response.Extra = append(response.Extra, opt)
+
+		return errors.New("invalid domain; must be object.patchwork.horse or a subdomain")
 	}
 
 	// Huge hack, forgive me. Return hard coded A values
@@ -132,10 +151,24 @@ func handleAAAA(query *dns.Msg, response *dns.Msg) error {
 		return errors.New("handleAAAA expects an AAAA question type")
 	}
 
-	// Question section must be for *.object.patchwork.horse
-	if !dns.IsSubDomain("object.patchwork.horse.", query.Question[0].Name) {
+	// Question section must be for *.object.patchwork.horse or object.patchwork.horse
+	if !dns.IsSubDomain("object.patchwork.horse.", query.Question[0].Name) && query.Question[0].Name != "object.patchwork.horse." {
 		response.SetRcode(query, dns.RcodeNameError)
-		return errors.New("invalid domain; must be a subdomain of object.patchwork.horse")
+
+		// Add extended DNS error information
+		opt := new(dns.OPT)
+		opt.Hdr.Name = "."
+		opt.Hdr.Rrtype = dns.TypeOPT
+		opt.SetUDPSize(4096)
+
+		ede := new(dns.EDNS0_EDE)
+		ede.InfoCode = dns.ExtendedErrorCodeOther
+		ede.ExtraText = "Domain must be object.patchwork.horse or a subdomain"
+		opt.Option = append(opt.Option, ede)
+
+		response.Extra = append(response.Extra, opt)
+
+		return errors.New("invalid domain; must be object.patchwork.horse or a subdomain")
 	}
 
 	// Huge hack, Epona forgive me. Return hard coded AAAA values
