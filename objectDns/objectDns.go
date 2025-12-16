@@ -43,8 +43,7 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	// Check if there are questions
 	if len(r.Question) > 0 {
-		q := r.Question[0]
-
+		q := &r.Question[0]
 		q.Name = strings.ToLower(q.Name)
 
 		switch q.Qtype {
