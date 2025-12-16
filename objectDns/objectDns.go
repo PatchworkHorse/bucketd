@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/miekg/dns"
 	"github.com/redis/go-redis/v9"
@@ -43,6 +44,8 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 	// Check if there are questions
 	if len(r.Question) > 0 {
 		q := r.Question[0]
+
+		q.Name = strings.ToLower(q.Name)
 
 		switch q.Qtype {
 		case dns.TypeTXT:
@@ -93,7 +96,6 @@ func handleTxt(query *dns.Msg, response *dns.Msg) error {
 		response.SetRcode(query, dns.RcodeNameError)
 		return errors.New("cache miss")
 	}
-	return nil
 
 	value, _ := getCmd.Result()
 	ttl, _ := ttlCmd.Result()
