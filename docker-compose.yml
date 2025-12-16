@@ -1,3 +1,11 @@
+x-redis-common: &redis-common
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  REDIS_USERNAME: ""
+  REDIS_PASSWORD: ""
+  REDIS_DB: 0
+  REDIS_PROTOCOL: 2
+
 networks:
   app-network:
     driver: bridge
@@ -9,11 +17,25 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-      - "8053:8053/udp"
     networks:
       - app-network
     environment:
-      - GIN_MODE=release
+      <<: *redis-common
+      GIN_MODE: release
+      API_MODE: http
+    restart: unless-stopped
+
+  dns:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "53:8053/udp"
+    networks:
+      - app-network
+    environment:
+      <<: *redis-common
+      API_MODE: dns
     restart: unless-stopped
 
   redis: 

@@ -22,18 +22,34 @@ var redisOptions = &redis.Options{
 
 func main() {
 
-	r := gin.Default()
+	// Skipping DB and proto assignment; inherit default from struct
+	redisOptions = &redis.Options{
+		Addr:     os.Getenv("REDIS_HOST"),
+		Password: os.Getenv("REDIS_PASSWORD"),
+	}
 
-	r.GET("/hello", getHello)
-	r.GET("/object/:key", func(c *gin.Context) {
-		getCache(c, redisOptions)
-	})
-	r.POST("/object/:key/:value/:expire", func(c *gin.Context) {
-		setCache(c, redisOptions)
-	})
+	apiMode := os.Getenv("API_MODE")
 
-	go objectDns.StartDnsListener()
-	r.Run()
+	if apiMode == "http" {
+
+		r := gin.Default()
+
+		r.GET("/hello", getHello)
+
+		// Object cache routes
+		r.GET("/:key", func(c *gin.Context) {
+			getCache(c, redisOptions)
+		})
+		r.POST("/:key/:value/:expire", func(c *gin.Context) {
+			setCache(c, redisOptions)
+		})
+
+		r.Run()
+	}
+
+	if apiMode == "dns" {
+		objectDns.StartDnsListener(redisOptions)
+	}
 
 }
 

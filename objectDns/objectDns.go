@@ -10,15 +10,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Not great to define Redis options everywhere they're used
-var redisOptions = &redis.Options{
-	Addr:     "redis:6379",
-	Password: "",
-	DB:       0,
-	Protocol: 2,
-}
+var redOpts *redis.Options
 
-func StartDnsListener() {
+func StartDnsListener(redisOptions *redis.Options) {
+
+	redOpts = redisOptions
 
 	dns.HandleFunc(".", handleRequest)
 
@@ -52,8 +48,6 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 			handleAAAA(r, m)
 		}
 	}
-
-	w.WriteMsg(m)
 }
 
 func handleTxt(query *dns.Msg, response *dns.Msg) error {
@@ -63,13 +57,13 @@ func handleTxt(query *dns.Msg, response *dns.Msg) error {
 	}
 
 	rdb, ctx, parts :=
-		redis.NewClient(redisOptions),
+		redis.NewClient(redOpts),
 		context.Background(),
 		dns.SplitDomainName(query.Question[0].Name)
 
 	key := parts[0]
 
-	fmt.Printf("Attempting cache hit for DNS query part %s...\n", key)
+	fmt.Printf("Attempting to satisfy DNS object request for key %s...\n", key)
 
 	pipe := rdb.Pipeline()
 	getCmd := pipe.Get(ctx, key)
@@ -78,6 +72,7 @@ func handleTxt(query *dns.Msg, response *dns.Msg) error {
 	_, err := pipe.Exec(ctx)
 
 	if err != nil && err != redis.Nil {
+		fmt.Printf("Cache miss for DNS query part %s...\n", key)
 		response.SetRcode(query, dns.RcodeServerFailure)
 		return err
 	}
@@ -96,6 +91,9 @@ func handleTxt(query *dns.Msg, response *dns.Msg) error {
 	t.Txt = []string{value}
 
 	response.Answer = append(response.Answer, t)
+
+	fmt.Printf("Cache hit! Key TTL is: %s...\n", ttl)
+
 	return nil
 }
 
