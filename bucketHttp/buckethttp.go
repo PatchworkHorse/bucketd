@@ -94,26 +94,25 @@ func getCache(gctx *gin.Context, redisOptions *redis.Options) {
 	ctx := context.Background()
 	key := strings.ToLower(gctx.Param("key"))
 
-	pipe := rdb.Pipeline()
-	getCmd := pipe.Get(ctx, key)
-	ttlCmd := pipe.TTL(ctx, key)
+	value, err := rdb.Get(ctx, key).Result()
 
-	_, err := pipe.Exec(ctx)
-
-	if err != nil && err != redis.Nil {
-		gctx.String(http.StatusInternalServerError, "Failed to get cache")
+	if err == redis.Nil {
+		gctx.JSON(http.StatusNotFound, gin.H{"error": "key not found"})
 		return
 	}
 
-	value, _ := getCmd.Result()
-	ttl, _ := ttlCmd.Result()
+	if err != nil {
+		gctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get cache"})
+		return
+	}
+
+	ttl, _ := rdb.TTL(ctx, key).Result()
 
 	gctx.JSON(http.StatusOK, gin.H{
 		"value":      value,
 		"ttl":        int64(ttl.Seconds()),
-		"validUntil": time.Now().UTC().Add(ttl),
+		"validUntil": time.Now().UTC().Add(ttl).Unix(),
 	})
-	gctx.Header("X-BucketD-TTL", ttl.String())
 }
 
 func setCache(gctx *gin.Context, coreConfig *config.CoreConfig, redisOptions *redis.Options) {
