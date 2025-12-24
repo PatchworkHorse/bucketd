@@ -169,7 +169,7 @@ func handleAAAA(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) 
 
 func validateHostname(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) (ok bool, err error) {
 
-	if dns.IsSubDomain(dnsConfig.FQDN, query.Question[0].Name) && query.Question[0].Name == dnsConfig.FQDN {
+	if dns.IsSubDomain(dnsConfig.FQDN, query.Question[0].Name) {
 		return true, nil
 	}
 

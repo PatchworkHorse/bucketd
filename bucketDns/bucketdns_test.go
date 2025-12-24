@@ -82,11 +82,13 @@ func TestHandleTx(t *testing.T) {
 
 	// Start our DNS listener
 	go func() {
+		cConfig := config.NewCoreConfig()
 		dConfig := config.NewDnsConfig()
+		dConfig.FQDN = "object.patchwork.horse."
 		rConfig := config.RedisConfig{
 			Address: rClient.Options().Addr,
 		}
-		StartDnsListener(&dConfig, &rConfig)
+		StartDnsListener(&cConfig, &dConfig, &rConfig)
 	}()
 
 	// Lazy wait to wait for DNS server to be up
@@ -102,6 +104,10 @@ func TestHandleTx(t *testing.T) {
 	// Assert
 	if err != nil {
 		t.Fatalf("DNS query failed: %v", err)
+	}
+
+	if response.Rcode != dns.RcodeSuccess {
+		t.Fatalf("Expected DNS RcodeSuccess, got %s", dns.RcodeToString[response.Rcode])
 	}
 
 	t.Logf("DNS Response: %+v", response)

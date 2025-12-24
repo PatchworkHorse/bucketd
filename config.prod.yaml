@@ -10,7 +10,7 @@ http:
 
 dns:
   port: 8053
-  fqdn: "object.patchwork.horse."
+  fqdn: "patchwork.horse."
   a: "50.116.57.102"
   aaaa: "2600:3c03::f03c:95ff:fe5d:294f"
 
