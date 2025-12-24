@@ -58,6 +58,11 @@ func (h *DNSHandler) handleRequest(w dns.ResponseWriter, req *dns.Msg, dnsConfig
 	q := &req.Question[0]
 	q.Name = strings.ToLower(q.Name)
 
+	if _, err := validateHostname(req, m, dnsConfig); err != nil {
+		w.WriteMsg(m) // Returns NXDOMAIN with EDE
+		return
+	}
+
 	switch q.Qtype {
 	case dns.TypeTXT:
 		err = h.handleTxt(req, m, dnsConfig)
@@ -125,10 +130,6 @@ func handleA(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) err
 		return errors.New("handleA expects an A question type")
 	}
 
-	if _, err := validateHostname(query, response, dnsConfig); err != nil {
-		return err
-	}
-
 	a := new(dns.A)
 	a.Hdr = dns.RR_Header{
 		Name:   query.Question[0].Name,
@@ -147,10 +148,6 @@ func handleA(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) err
 func handleAAAA(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) error {
 	if query.Question[0].Qtype != dns.TypeAAAA {
 		return errors.New("handleAAAA expects an AAAA question type")
-	}
-
-	if _, err := validateHostname(query, response, dnsConfig); err != nil {
-		return err
 	}
 
 	aaaa := new(dns.AAAA)
