@@ -22,6 +22,7 @@ func StartDnsListener(coreConfig *config.CoreConfig, dnsConfig *config.DnsConfig
 		Redis: redis.NewClient(&redis.Options{
 			Addr:     redisConfig.Address,
 			Password: redisConfig.Password,
+			DB:       redisConfig.Database,
 		}),
 		DnsConfig: dnsConfig,
 	}

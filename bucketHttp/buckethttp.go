@@ -25,6 +25,7 @@ func StartHttpListener(coreCfg *config.CoreConfig, httpConfig *config.HttpConfig
 	redisOptions = &redis.Options{
 		Addr:     redisConfig.Address,
 		Password: redisConfig.Password,
+		DB:       redisConfig.Database,
 	}
 
 	r := gin.Default()
@@ -132,8 +133,11 @@ func setCache(gctx *gin.Context, coreConfig *config.CoreConfig, redisOptions *re
 	}
 
 	if count := rdb.DBSize(ctx).Val(); count >= int64(coreConfig.MaxElements) {
-		gctx.String(http.StatusTooManyRequests, "Max allowed elements has been reached")
-		return
+		// Allow updates to existing keys even if full
+		if rdb.Exists(ctx, keyParam).Val() == 0 {
+			gctx.String(http.StatusTooManyRequests, "Max allowed elements has been reached")
+			return
+		}
 	}
 
 	err = rdb.Set(ctx, keyParam, valueParam, time.Duration(expire)*time.Second).Err()
