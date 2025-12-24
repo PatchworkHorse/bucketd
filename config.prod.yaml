@@ -1,0 +1,19 @@
+core:
+  maxKeyLength: 512 # bytes
+  maxValueLength: 512 # bytes
+  maxTtl: 3600 # seconds / 1 hour
+
+http:
+  port: 8080
+  hostname: "0.0.0.0" # Any 
+
+dns:
+  port: 8053
+  fqdn: "object.patchwork.horse."
+  a: "50.116.57.102"
+  aaaa: "2600:3c03::f03c:95ff:fe5d:294f"
+
+redis:
+  address: "redis:6379"
+  password: ""
+  database: 0

@@ -6,12 +6,17 @@ x-redis-common: &redis-common
   REDIS_DB: 0
   REDIS_PROTOCOL: 2
 
+x-config-volume: &config-volume
+  volumes:
+    - ./config.prod.yaml:/app/config.prod.yaml
+
 networks:
   app-network:
     driver: bridge
 
 services:
   api:
+    <<: *config-volume
     build:
       context: .
       dockerfile: Dockerfile
@@ -22,10 +27,11 @@ services:
     environment:
       <<: *redis-common
       GIN_MODE: release
-      API_MODE: http
+      BUCKETD_CORE__MODE: http
     restart: unless-stopped
 
   dns:
+    <<: *config-volume
     build:
       context: .
       dockerfile: Dockerfile
@@ -35,7 +41,7 @@ services:
       - app-network
     environment:
       <<: *redis-common
-      API_MODE: dns
+      BUCKETD_CORE__MODE: dns
     restart: unless-stopped
 
   redis: 

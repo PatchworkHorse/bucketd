@@ -1,116 +1,58 @@
 package main
 
 import (
-	"context"
-	"go-object-api/objectDns"
-	"net/http"
-	"os"
-	"strconv"
+	"fmt"
 	"strings"
-	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
+
+	"patchwork.horse/bucketd/bucketDns"
+	"patchwork.horse/bucketd/bucketHttp"
+	"patchwork.horse/bucketd/config"
 )
 
-// Default redis options
-var redisOptions = &redis.Options{
-	Password: "",
-	DB:       0,
-	Protocol: 2,
-}
-
 func main() {
+	k := koanf.New(".")
 
-	// Skipping DB and proto assignment; inherit default from struct
-	redisOptions = &redis.Options{
-		Addr:     os.Getenv("REDIS_HOST"),
-		Password: os.Getenv("REDIS_PASSWORD"),
+	mapper := func(s string) string {
+		s = strings.TrimPrefix(s, "BUCKETD_")
+		s = strings.ReplaceAll(s, "__", ".")
+		return strings.ToLower(s)
 	}
 
-	apiMode := os.Getenv("API_MODE")
-
-	if apiMode == "http" {
-
-		r := gin.Default()
-
-		r.GET("/hello", getHello)
-
-		// Object cache routes
-		r.GET("/:key", func(c *gin.Context) {
-			getCache(c, redisOptions)
-		})
-		r.POST("/:key/:value/:expire", func(c *gin.Context) {
-			setCache(c, redisOptions)
-		})
-
-		r.Run()
+	if err := k.Load(file.Provider("config.prod.yaml"), yaml.Parser()); err != nil {
+		fmt.Printf("Failed to load config file: %v\n", err)
+	}
+	if err := k.Load(env.Provider("BUCKETD_", ".", mapper), nil); err != nil {
+		fmt.Printf("Failed to load environment variables: %v\n", err)
 	}
 
-	if apiMode == "dns" {
-		objectDns.StartDnsListener(redisOptions)
+	var coreConfig config.CoreConfig
+	var httpConfig config.HttpConfig
+	var dnsConfig config.DnsConfig
+	var redisConfig config.RedisConfig
+
+	_ = k.Unmarshal(config.CoreKey, &coreConfig)
+	_ = k.Unmarshal(config.HTTPKey, &httpConfig)
+	_ = k.Unmarshal(config.DNSKey, &dnsConfig)
+	_ = k.Unmarshal(config.RedisKey, &redisConfig)
+
+	fmt.Printf("DEBUG: coreConfig.Mode = '%s'\n", coreConfig.Mode)
+
+	switch strings.ToLower(coreConfig.Mode) {
+
+	case "http":
+		httpConfig := config.NewHttpConfig()
+		bucketHttp.StartHttpListener(&coreConfig, &httpConfig, &redisConfig)
+
+	case "dns":
+		dnsConfig := config.NewDnsConfig()
+		bucketDns.StartDnsListener(&dnsConfig, &redisConfig)
+
+	default:
+		panic("Invalid mode in core config, must be 'http' or 'dns'")
 	}
-
-}
-
-func getHello(ctx *gin.Context) {
-
-	time := time.Now().Format("2006-01-02 15:04:05")
-	host, _ := os.Hostname()
-
-	ctx.String(http.StatusOK,
-		"Hello! The current system time is %s, your request was handled by %s\n", time, host)
-}
-
-// Todo: consolidate Redis options
-
-func getCache(gctx *gin.Context, redisOptions *redis.Options) {
-	rdb := redis.NewClient(redisOptions)
-
-	ctx := context.Background()
-	key := strings.ToLower(gctx.Param("key"))
-
-	pipe := rdb.Pipeline()
-	getCmd := pipe.Get(ctx, key)
-	ttlCmd := pipe.TTL(ctx, key)
-
-	_, err := pipe.Exec(ctx)
-
-	if err != nil && err != redis.Nil {
-		gctx.String(http.StatusInternalServerError, "Failed to get cache")
-		return
-	}
-
-	value, _ := getCmd.Result()
-	ttl, _ := ttlCmd.Result()
-
-	gctx.String(http.StatusAccepted, value+"\n")
-	gctx.Header("X-Expires-In", ttl.String())
-}
-
-func setCache(gctx *gin.Context, redisOptions *redis.Options) {
-	rdb := redis.NewClient(redisOptions)
-
-	ctx := context.Background()
-
-	keyParam := strings.ToLower(gctx.Param("key"))
-	valueParam := gctx.Param("value")
-	expireParam := gctx.Param("expire")
-
-	println(expireParam)
-	expire, err := strconv.Atoi(expireParam)
-
-	if err != nil {
-		gctx.String(http.StatusBadRequest, "Invalid expire parameter")
-		return
-	}
-
-	err = rdb.Set(ctx, keyParam, valueParam, time.Duration(expire)*time.Second).Err()
-
-	if err != nil {
-		gctx.String(http.StatusInternalServerError, "Failed to set cache")
-		return
-	}
-
-	gctx.String(http.StatusOK, "Cache set successfully!\n")
 }
