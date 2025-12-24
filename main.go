@@ -50,7 +50,7 @@ func main() {
 
 	case "dns":
 		dnsConfig := config.NewDnsConfig()
-		bucketDns.StartDnsListener(&dnsConfig, &redisConfig)
+		bucketDns.StartDnsListener(&coreConfig, &dnsConfig, &redisConfig)
 
 	default:
 		panic("Invalid mode in core config, must be 'http' or 'dns'")
