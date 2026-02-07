@@ -2,11 +2,11 @@ core:
   maxKeyLength: 512 # bytes
   maxValueLength: 512 # bytes
   maxTtl: 3600 # seconds / 1 hour
-  maxElements: 5000 
+  maxElements: 5000
 
 http:
   port: 8080
-  hostname: "0.0.0.0" # Any 
+  hostname: "object.patchwork.horse"
 
 dns:
   port: 8053
