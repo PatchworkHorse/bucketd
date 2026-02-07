@@ -186,5 +186,5 @@ func validateHostname(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsCo
 
 	response.Extra = append(response.Extra, opt)
 
-	return false, errors.New(fmt.Sprintf("Domain must be %s or a subdomain", dnsConfig.FQDN))
+	return false, fmt.Errorf("Domain must be %s or a subdomain", dnsConfig.FQDN)
 }

@@ -2,7 +2,6 @@ package bucketHttp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -14,19 +13,14 @@ import (
 	"patchwork.horse/bucketd/config"
 )
 
-// Patchwork todo:
-// - Respect core config limits (max key length, max value length, max ttl)
-// - Respect hostname in HttpConfig (404 if not matching)
-
-var redisOptions *redis.Options
+var rdb *redis.Client
 
 func StartHttpListener(coreCfg *config.CoreConfig, httpConfig *config.HttpConfig, redisConfig *config.RedisConfig) {
-
-	redisOptions = &redis.Options{
+	rdb = redis.NewClient(&redis.Options{
 		Addr:     redisConfig.Address,
 		Password: redisConfig.Password,
 		DB:       redisConfig.Database,
-	}
+	})
 
 	r := gin.Default()
 	registerRoutes(r, coreCfg, httpConfig)
@@ -35,30 +29,36 @@ func StartHttpListener(coreCfg *config.CoreConfig, httpConfig *config.HttpConfig
 
 func registerRoutes(r *gin.Engine, coreConfig *config.CoreConfig, httpConfig *config.HttpConfig) *gin.Engine {
 
+	r.Use(hostnameMiddleware(httpConfig))
+
 	r.GET("/*key", func(c *gin.Context) {
-		validateHostname(c, httpConfig)
-		getCache(c, redisOptions)
+		getCache(c, rdb)
 	})
 
 	r.POST("/*key", func(c *gin.Context) {
-		validateHostname(c, httpConfig)
+
 		if err := validateSetParams(c, coreConfig); err != nil {
-			c.String(http.StatusBadRequest, err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
 			return
 		}
-		setCache(c, coreConfig, redisOptions)
+		setCache(c, coreConfig, rdb)
 	})
 
 	return r
 
 }
 
-func validateHostname(gctx *gin.Context, httpConfig *config.HttpConfig) error {
-	if gctx.Request.Host == httpConfig.Hostname {
-		return nil
+func hostnameMiddleware(httpConfig *config.HttpConfig) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Host != httpConfig.Hostname {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Hostname"})
+			c.Abort()
+			return
+		}
+		c.Next()
 	}
-
-	return errors.New("Invalid hostname")
 }
 
 func validateSetParams(gctx *gin.Context, coreConfig *config.CoreConfig) error {
@@ -89,9 +89,7 @@ func validateSetParams(gctx *gin.Context, coreConfig *config.CoreConfig) error {
 	return nil
 }
 
-func getCache(gctx *gin.Context, redisOptions *redis.Options) {
-	rdb := redis.NewClient(redisOptions)
-
+func getCache(gctx *gin.Context, rdb *redis.Client) {
 	ctx := context.Background()
 	key := strings.TrimPrefix(strings.ToLower(gctx.Param("key")), "/")
 
@@ -116,9 +114,7 @@ func getCache(gctx *gin.Context, redisOptions *redis.Options) {
 	})
 }
 
-func setCache(gctx *gin.Context, coreConfig *config.CoreConfig, redisOptions *redis.Options) {
-	rdb := redis.NewClient(redisOptions)
-
+func setCache(gctx *gin.Context, coreConfig *config.CoreConfig, rdb *redis.Client) {
 	ctx := context.Background()
 
 	keyParam := strings.TrimPrefix(strings.ToLower(gctx.Param("key")), "/")
