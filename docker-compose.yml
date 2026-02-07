@@ -15,6 +15,28 @@ networks:
     driver: bridge
 
 services:
+  # proxy:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   restart: always
+  #   volumes:
+  #     - ./config/gateway/:/etc/nginx/conf.d/:ro
+  #     - ./config/certbot/:/etc/letsencrypt:ro
+  #     - ./www/certbot/:/var/www/certbot/:ro
+  #     - ./content/object.patchwork.horse/:/var/www/object.patchwork.horse/:ro
+  #   networks:
+  #     - app-network
+
+  # certbot:
+  #   image: certbot/certbot:latest
+  #   volumes:
+  #     - ./www/certbot/:/var/www/certbot/:rw
+  #     - ./config/certbot/:/etc/letsencrypt/:rw
+  #   networks:
+  #     - app-network
+  
   api:
     <<: *config-volume
     build:

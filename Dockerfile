@@ -13,7 +13,7 @@ FROM debian:bookworm-slim
 WORKDIR /app
 
 COPY --from=builder /app/bucketd .
-COPY config.prod.yaml .
+COPY config/config.prod.yaml .
 
 EXPOSE 8080
 

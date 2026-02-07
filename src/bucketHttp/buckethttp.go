@@ -53,7 +53,7 @@ func registerRoutes(r *gin.Engine, coreConfig *config.CoreConfig, httpConfig *co
 func hostnameMiddleware(httpConfig *config.HttpConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Host != httpConfig.Hostname {
-			c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid Hostname"})
+			c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid Hostname: got %s, expected %s", c.Request.Host, httpConfig.Hostname)})
 			c.Abort()
 			return
 		}
