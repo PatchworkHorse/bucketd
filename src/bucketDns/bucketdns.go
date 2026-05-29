@@ -67,7 +67,7 @@ func (h *DNSHandler) handleRequest(w dns.ResponseWriter, req *dns.Msg, dnsConfig
 
 	switch q.Qtype {
 	case dns.TypeTXT:
-		err = h.handleTxt(req, m, dnsConfig)
+		err = h.handleTxt(req, m)
 	case dns.TypeA:
 		err = handleA(req, m, dnsConfig)
 	case dns.TypeAAAA:
@@ -82,7 +82,7 @@ func (h *DNSHandler) handleRequest(w dns.ResponseWriter, req *dns.Msg, dnsConfig
 	w.WriteMsg(m)
 }
 
-func (h *DNSHandler) handleTxt(req *dns.Msg, res *dns.Msg, dnsConfig *config.DnsConfig) error {
+func (h *DNSHandler) handleTxt(req *dns.Msg, res *dns.Msg) error {
 
 	// Notes:
 	// Responses limited to ~255 bytes
@@ -187,10 +187,10 @@ func validateHostname(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsCo
 
 	ede := new(dns.EDNS0_EDE)
 	ede.InfoCode = dns.ExtendedErrorCodeOther
-	ede.ExtraText = fmt.Sprintf("Domain must be one of %s or a subdomain", strings.Join(dnsConfig.FQDNs, ", "))
+	ede.ExtraText = "Domain is not allowed"
 	opt.Option = append(opt.Option, ede)
 
 	response.Extra = append(response.Extra, opt)
 
-	return false, fmt.Errorf("Domain must be one of %s or a subdomain", strings.Join(dnsConfig.FQDNs, ", "))
+	return false, fmt.Errorf("domain is not allowed")
 }
