@@ -37,7 +37,7 @@ func StartDnsListener(coreConfig *config.CoreConfig, dnsConfig *config.DnsConfig
 	}
 
 	log.L.Infof("Listening on port %d for DNS queries", dnsConfig.Port)
-	log.L.Infof("Accepting DNS queries for %s", dnsConfig.FQDN)
+	log.L.Infof("Accepting DNS queries for %s", strings.Join(dnsConfig.FQDNs, ", "))
 
 	if err := server.ListenAndServe(); err != nil {
 		log.L.WithError(err).Fatal("Failed to start DNS server")
@@ -168,9 +168,15 @@ func handleAAAA(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) 
 }
 
 func validateHostname(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsConfig) (ok bool, err error) {
+	if len(dnsConfig.FQDNs) == 0 {
+		response.SetRcode(query, dns.RcodeServerFailure)
+		return false, fmt.Errorf("no DNS hostnames configured")
+	}
 
-	if dns.IsSubDomain(dnsConfig.FQDN, query.Question[0].Name) {
-		return true, nil
+	for _, fqdn := range dnsConfig.FQDNs {
+		if dns.IsSubDomain(strings.ToLower(fqdn), strings.ToLower(query.Question[0].Name)) {
+			return true, nil
+		}
 	}
 
 	response.SetRcode(query, dns.RcodeNameError)
@@ -181,10 +187,10 @@ func validateHostname(query *dns.Msg, response *dns.Msg, dnsConfig *config.DnsCo
 
 	ede := new(dns.EDNS0_EDE)
 	ede.InfoCode = dns.ExtendedErrorCodeOther
-	ede.ExtraText = fmt.Sprintf("Domain must be %s or a subdomain", dnsConfig.FQDN)
+	ede.ExtraText = fmt.Sprintf("Domain must be one of %s or a subdomain", strings.Join(dnsConfig.FQDNs, ", "))
 	opt.Option = append(opt.Option, ede)
 
 	response.Extra = append(response.Extra, opt)
 
-	return false, fmt.Errorf("Domain must be %s or a subdomain", dnsConfig.FQDN)
+	return false, fmt.Errorf("Domain must be one of %s or a subdomain", strings.Join(dnsConfig.FQDNs, ", "))
 }

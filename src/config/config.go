@@ -30,12 +30,12 @@ type CoreConfig struct {
 type DnsConfig struct {
 	// Port defines the port on which to listen for DNS queries
 	Port int
-	// FQDN to which BucketDns is bound.
-	// The service will only provide answers for questions to this FQDN. Don't forget the trailing dot.
-	FQDN string
-	// A is the IPv4 answer to be provided for A queries to the FQDN
+	// FQDNs to which BucketDns is bound.
+	// The service will only provide answers for questions to these FQDNs. Don't forget trailing dots.
+	FQDNs []string
+	// A is the IPv4 answer to be provided for A queries to configured FQDNs
 	A net.IP
-	// AAAA is the IPv6 answer to be provided for AAAA queries to the FQDN
+	// AAAA is the IPv6 answer to be provided for AAAA queries to configured FQDNs
 	AAAA net.IP
 }
 
@@ -43,10 +43,6 @@ type DnsConfig struct {
 type HttpConfig struct {
 	// Port represents the port on which to listen for HTTP requests
 	Port int
-	// Deprecated: See Hostnames.
-	// Hostname represents the hostname expected for HTTP requests
-	Hostname string
-
 	// Valid hostnames for incoming requests. If empty, no hostname validation will be performed.
 	Hostnames []string
 }

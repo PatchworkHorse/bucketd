@@ -84,7 +84,7 @@ func TestHandleTx(t *testing.T) {
 	go func() {
 		cConfig := config.NewCoreConfig()
 		dConfig := config.NewDnsConfig()
-		dConfig.FQDN = "object.patchwork.horse."
+		dConfig.FQDNs = []string{"object.patchwork.horse."}
 		rConfig := config.RedisConfig{
 			Address: rClient.Options().Addr,
 		}
