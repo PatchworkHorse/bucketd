@@ -143,12 +143,32 @@ func setCache(gctx *gin.Context, coreConfig *config.CoreConfig, rdb *redis.Clien
 		return
 	}
 
+	var warnings []string
+
+	if containsNonAscii(keyParam) {
+		warnings = append(warnings, "Key contains non-ASCII characters, entry will not be resolvable via DNS.")
+	}
+
+	if containsNonAscii(valueParam) {
+		warnings = append(warnings, "Value contains non-ASCII characters, entry will not be resolvable via DNS.")
+	}
+
 	gctx.JSON(http.StatusOK, gin.H{
 		"message":    "Cache set successfully!",
 		"key":        keyParam,
 		"ttl":        expire,
 		"validUntil": time.Now().UTC().Add(time.Duration(expire) * time.Second),
+		"warnings":   warnings,
 	})
 
 	gctx.Header("X-BucketD-TTL", strconv.Itoa(expire))
+}
+
+func containsNonAscii(s string) bool {
+	for _, r := range s {
+		if r > 127 {
+			return true
+		}
+	}
+	return false
 }
