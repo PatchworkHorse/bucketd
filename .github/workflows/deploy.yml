@@ -68,6 +68,11 @@ jobs:
             docker-compose.yml config/ \
             patchwork@ewr-container-001.vwire.net:~/object-api/
 
+      - name: Log in to GHCR on host
+        run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa patchwork@ewr-container-001.vwire.net \
+            "echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+
       - name: Deploy container
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa patchwork@ewr-container-001.vwire.net \
