@@ -43,8 +43,12 @@ type DnsConfig struct {
 type HttpConfig struct {
 	// Port represents the port on which to listen for HTTP requests
 	Port int
+	// Deprecated: See Hostnames.
 	// Hostname represents the hostname expected for HTTP requests
 	Hostname string
+
+	// Valid hostnames for incoming requests. If empty, no hostname validation will be performed.
+	Hostnames []string
 }
 
 // RedisConfig provides Redis-specific configurations if using a Redis cache provider backend

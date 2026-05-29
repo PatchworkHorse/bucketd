@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,11 @@ func StartHttpListener(coreCfg *config.CoreConfig, httpConfig *config.HttpConfig
 		Password: redisConfig.Password,
 		DB:       redisConfig.Database,
 	})
+
+	if err := validateConfig(httpConfig); err != nil {
+		fmt.Println("Invalid HTTP configuration:", err)
+		return
+	}
 
 	r := gin.Default()
 	registerRoutes(r, coreCfg, httpConfig)
@@ -52,12 +58,14 @@ func registerRoutes(r *gin.Engine, coreConfig *config.CoreConfig, httpConfig *co
 
 func hostnameMiddleware(httpConfig *config.HttpConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if httpConfig.Hostname != "" && c.Request.Host != httpConfig.Hostname {
-			c.JSON(http.StatusBadRequest, gin.H{"message": fmt.Sprintf("Invalid Hostname: got %s, expected %s", c.Request.Host, httpConfig.Hostname)})
-			c.Abort()
+
+		if slices.Contains(httpConfig.Hostnames, strings.ToLower(c.Request.Host)) {
+			c.Next()
 			return
 		}
-		c.Next()
+
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid hostname"})
+		c.Abort()
 	}
 }
 
@@ -171,4 +179,12 @@ func containsNonAscii(s string) bool {
 		}
 	}
 	return false
+}
+
+func validateConfig(httpConfig *config.HttpConfig) error {
+	if len(httpConfig.Hostnames) == 0 {
+		return fmt.Errorf("at least one hostname must be specified in the config")
+	}
+
+	return nil
 }

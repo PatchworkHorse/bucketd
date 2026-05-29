@@ -7,6 +7,9 @@ core:
 http:
   port: 8080
   hostname: "object.patchwork.horse"
+  hostnames:
+    - "object.patchwork.horse"
+    - "object.vwire.net"
 
 dns:
   port: 8053
