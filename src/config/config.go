@@ -32,7 +32,7 @@ type DnsConfig struct {
 	Port int
 	// FQDNs to which BucketDns is bound.
 	// The service will only provide answers for questions to these FQDNs. Don't forget trailing dots.
-	FQDNs []string
+	FQDNs []string `koanf:"fqdns"`
 	// A is the IPv4 answer to be provided for A queries to configured FQDNs
 	A net.IP
 	// AAAA is the IPv6 answer to be provided for AAAA queries to configured FQDNs

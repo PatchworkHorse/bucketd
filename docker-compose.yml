@@ -8,7 +8,7 @@ x-redis-common: &redis-common
 
 x-config-volume: &config-volume
   volumes:
-    - ./config.prod.yaml:/app/config.prod.yaml
+    - ./config/config.prod.yaml:/app/config.prod.yaml
 
 networks:
   app-network:
@@ -32,11 +32,9 @@ services:
 
   dns:
     <<: *config-volume
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/patchworkhorse/bucketd:latest
     ports:
-      - "53:8053/udp"
+      - "5353:8053/udp"
     networks:
       - app-network
     environment:
