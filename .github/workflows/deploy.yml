@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -20,6 +19,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Compute lowercase image name
+        id: image
+        run: echo "image_name_lc=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
       - name: Log in to Container Registry
         uses: docker/login-action@v3
@@ -34,8 +37,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.image_name_lc }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.image.outputs.image_name_lc }}:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -47,6 +50,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Compute lowercase image name
+        id: image
+        run: echo "image_name_lc=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
       - name: Setup SSH Key
         run: |
@@ -68,4 +75,4 @@ jobs:
       - name: Deploy container
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa patchwork@ewr-container-001.vwire.net \
-            'cd object-api && IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} IMAGE_TAG=${{ github.sha }} docker compose pull && IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} IMAGE_TAG=${{ github.sha }} docker compose up -d --force-recreate --no-deps'
+            'cd object-api && IMAGE_NAME=${{ env.REGISTRY }}/${{ steps.image.outputs.image_name_lc }} IMAGE_TAG=${{ github.sha }} docker compose pull && IMAGE_NAME=${{ env.REGISTRY }}/${{ steps.image.outputs.image_name_lc }} IMAGE_TAG=${{ github.sha }} docker compose up -d --force-recreate --no-deps'
