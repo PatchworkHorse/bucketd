@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 )
@@ -10,7 +9,19 @@ import (
 func TestLoadConfig(t *testing.T) {
 	t.Setenv("BUCKETD_ENV", "test")
 	t.Setenv("BUCKETD_CORE__MODE", "dns")
-	copyConfigToWorkingDir(t, "test")
+
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	if err := os.Chdir("../config"); err != nil {
+		t.Fatalf("failed to change to config directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(wd); err != nil {
+			t.Fatalf("failed to restore working directory: %v", err)
+		}
+	})
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -36,26 +47,4 @@ func TestLoadConfig(t *testing.T) {
 	if !slices.Contains(dnsConfig.FQDNs, "object.patchwork.horse.") {
 		t.Fatal("DNS FQDNs does not contain 'object.patchwork.horse.'")
 	}
-}
-
-func copyConfigToWorkingDir(t *testing.T, env string) {
-	t.Helper()
-
-	src := filepath.Join("..", "config", "config."+env+".yaml")
-	dst := "config." + env + ".yaml"
-
-	data, err := os.ReadFile(src)
-	if err != nil {
-		t.Fatalf("failed to read source config %s: %v", src, err)
-	}
-
-	if err := os.WriteFile(dst, data, 0o644); err != nil {
-		t.Fatalf("failed to write test config %s: %v", dst, err)
-	}
-
-	t.Cleanup(func() {
-		if err := os.Remove(dst); err != nil && !os.IsNotExist(err) {
-			t.Fatalf("failed to remove test config %s: %v", dst, err)
-		}
-	})
 }
