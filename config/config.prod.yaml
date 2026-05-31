@@ -1,24 +1,24 @@
-Core:
-  MaxKeyLength: 512 # bytes
-  MaxValueLength: 512 # bytes
-  MaxTtl: 3600 # seconds / 1 hour
-  MaxElements: 5000
+core:
+  maxKeyLength: 512 # bytes
+  maxValueLength: 512 # bytes
+  maxTtl: 3600 # seconds / 1 hour
+  maxElements: 5000
 
-HTTP:
-  Port: 8080
-  Hostnames:
+http:
+  port: 8080
+  hostnames:
     - "object.patchwork.horse"
     - "object.vwire.net"
 
-DNS:
-  Port: 8053
-  FQDNs:
+dns:
+  port: 8053
+  fqdns:
     - "object.patchwork.horse."
     - "object.vwire.net."
-  A: "50.116.57.102"
-  AAAA: "2600:3c03::f03c:95ff:fe5d:294f"
+  a: "50.116.57.102"
+  aaaa: "2600:3c03::f03c:95ff:fe5d:294f"
 
-Redis:
-  Address: "redis:6379"
-  Password: ""
-  Database: 0
+redis:
+  address: "redis:6379"
+  password: ""
+  database: 0

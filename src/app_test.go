@@ -9,6 +9,7 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	t.Setenv("BUCKETD_ENV", "test")
+	t.Setenv("BUCKETD_CORE__MODE", "dns")
 	copyConfigToWorkingDir(t, "test")
 
 	defer func() {

@@ -6,55 +6,55 @@ import (
 )
 
 const (
-	CoreKey  = "Core"
-	HTTPKey  = "HTTP"
-	DNSKey   = "DNS"
-	RedisKey = "Redis"
+	CoreKey  = "core"
+	HTTPKey  = "http"
+	DNSKey   = "dns"
+	RedisKey = "redis"
 )
 
 // CoreConfig represents the global rules for caching values that apply to all providers
 type CoreConfig struct {
 	// Mode defines what service will run. Valid values are HTTP and DNS
-	Mode string
+	Mode string `koanf:"mode"`
 	// MaxKeyLength represents the max key length, in bytes
-	MaxKeyLength int // bytes
+	MaxKeyLength int `koanf:"maxKeyLength"` // bytes
 	// MaxValueLength represents the max value length, in bytes
-	MaxValueLength int // bytes
+	MaxValueLength int `koanf:"maxValueLength"` // bytes
 	// MaxTTL represents the max time to live for a given key
-	MaxTtl int // seconds,
+	MaxTtl int `koanf:"maxTtl"` // seconds,
 	// MaxElements is the maximum allowed elements we can store at any given time. Reject new entries until space becomes available
-	MaxElements int
+	MaxElements int `koanf:"maxElements"`
 }
 
 // DnsConfig provides DNS-provider specific configurations, consumed by BucketDns
 type DnsConfig struct {
 	// Port defines the port on which to listen for DNS queries
-	Port int
+	Port int `koanf:"port"`
 	// FQDNs to which BucketDns is bound.
 	// The service will only provide answers for questions to these FQDNs. Don't forget trailing dots.
-	FQDNs []string
+	FQDNs []string `koanf:"fqdns"`
 	// A is the IPv4 answer to be provided for A queries to configured FQDNs
-	A net.IP
+	A net.IP `koanf:"a"`
 	// AAAA is the IPv6 answer to be provided for AAAA queries to configured FQDNs
-	AAAA net.IP
+	AAAA net.IP `koanf:"aaaa"`
 }
 
 // HttpConfig provides HTTP-provider specific configurations
 type HttpConfig struct {
 	// Port represents the port on which to listen for HTTP requests
-	Port int
+	Port int `koanf:"port"`
 	// Valid hostnames for incoming requests. If empty, no hostname validation will be performed.
-	Hostnames []string
+	Hostnames []string `koanf:"hostnames"`
 }
 
 // RedisConfig provides Redis-specific configurations if using a Redis cache provider backend
 type RedisConfig struct {
 	// Address is the hostname and port (host:port) for the Redis instance
-	Address string
+	Address string `koanf:"address"`
 	// Password is the password to use with Redis, may be left blank if none
-	Password string
+	Password string `koanf:"password"`
 	// Database is used to specifiy which Redis DB to use, use 0 or leave blank to use the default
-	Database int
+	Database int `koanf:"database"`
 }
 
 // NewCoreConfig creates a new instance of CoreConfig with reasonable defaults
