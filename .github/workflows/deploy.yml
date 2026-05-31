@@ -67,6 +67,12 @@ jobs:
             docker-compose.yml config/ \
             patchwork@ewr-container-001.vwire.net:~/object-api/
 
+      - name: Copy config files
+        run: |
+          rsync -azv -e "ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa" \
+            config/config.prod.yaml \
+            patchwork@ewr-container-001.vwire.net:~/object-api/config.prod.yaml
+
       - name: Log in to GHCR on host
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa patchwork@ewr-container-001.vwire.net \
