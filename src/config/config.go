@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	CoreKey  = "core"
-	HTTPKey  = "http"
-	DNSKey   = "dns"
-	RedisKey = "redis"
+	CoreKey  = "Core"
+	HTTPKey  = "HTTP"
+	DNSKey   = "DNS"
+	RedisKey = "Redis"
 )
 
 // CoreConfig represents the global rules for caching values that apply to all providers

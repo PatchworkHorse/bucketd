@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -25,7 +26,15 @@ func TestLoadConfig(t *testing.T) {
 		t.Fatal("loadConfig returned nil config pointer")
 	}
 
-	t.Log("Hello world!")
+	// Test HTTP hostnames
+	if !slices.Contains(httpConfig.Hostnames, "object.patchwork.horse") {
+		t.Fatal("HTTP hostnames does not contain 'object.patchwork.horse'")
+	}
+
+	// Test DNS FQDNs
+	if !slices.Contains(dnsConfig.FQDNs, "object.patchwork.horse.") {
+		t.Fatal("DNS FQDNs does not contain 'object.patchwork.horse.'")
+	}
 }
 
 func copyConfigToWorkingDir(t *testing.T, env string) {
