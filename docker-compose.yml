@@ -28,6 +28,7 @@ services:
       <<: *redis-common
       GIN_MODE: release
       BUCKETD_CORE__MODE: http
+      BUCKETD_ENV: prod
     restart: unless-stopped
 
   dns:
@@ -40,6 +41,7 @@ services:
     environment:
       <<: *redis-common
       BUCKETD_CORE__MODE: dns
+      BUCKETD_ENV: prod
     restart: unless-stopped
 
   redis: 
