@@ -28,22 +28,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=
-            type=raw,value=latest
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -76,4 +68,4 @@ jobs:
       - name: Deploy container
         run: |
           ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa patchwork@ewr-container-001.vwire.net \
-            'cd object-api && docker compose pull && docker compose up -d --force-recreate --no-deps'
+            'cd object-api && IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} IMAGE_TAG=${{ github.sha }} docker compose pull && IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} IMAGE_TAG=${{ github.sha }} docker compose up -d --force-recreate --no-deps'

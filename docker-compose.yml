@@ -19,7 +19,7 @@ services:
   
   api:
     <<: *config-volume
-    image: ghcr.io/patchworkhorse/bucketd:latest
+    image: ${IMAGE_NAME:-ghcr.io/patchworkhorse/bucketd}:${IMAGE_TAG:-latest}
     ports:
       - "8080:8080"
     networks:
@@ -33,7 +33,7 @@ services:
 
   dns:
     <<: *config-volume
-    image: ghcr.io/patchworkhorse/bucketd:latest
+    image: ${IMAGE_NAME:-ghcr.io/patchworkhorse/bucketd}:${IMAGE_TAG:-latest}
     ports:
       - "5353:8053/udp"
     networks:
